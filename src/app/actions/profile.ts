@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { saveAvatar, UploadError } from "@/lib/uploads";
+import { cropFromForm, saveAvatar, UploadError } from "@/lib/uploads";
 
 const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
 
@@ -19,7 +19,7 @@ export async function updateProfile(formData: FormData): Promise<{ ok: true } | 
   if (file instanceof File && file.size > 0) {
     if (file.size > MAX_AVATAR_BYTES) return { ok: false, error: "Photo is larger than 10 MB." };
     try {
-      image = await saveAvatar(Buffer.from(await file.arrayBuffer()), user.id);
+      image = await saveAvatar(Buffer.from(await file.arrayBuffer()), user.id, cropFromForm(formData));
     } catch (e) {
       return { ok: false, error: e instanceof UploadError ? e.message : "Could not process that photo." };
     }

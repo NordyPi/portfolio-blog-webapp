@@ -43,6 +43,8 @@
   --color-accent-fg: var(--accent-fg);
   --color-danger: var(--danger);
 
+  /* SITE FONTS: choose the fonts themselves in src/app/fonts.ts. These lines only set the fallback order:
+     the chosen font, then the Japanese font (for kana/kanji), then system fonts while loading. */
   --font-sans: var(--font-body), var(--font-jp), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-heading), var(--font-jp), ui-serif, Georgia, serif;
 }

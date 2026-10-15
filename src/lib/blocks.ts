@@ -55,6 +55,13 @@ export type Block = z.infer<typeof blockSchema>;
 export type BlockType = Block["type"];
 export const blocksSchema = z.array(blockSchema);
 
+/**
+ * Width/height of each image slot as displayed by src/components/block-renderer.tsx (keep in sync).
+ * The editor's cropper frames uploads to these shapes. "wide" is shown full-width at a fixed height,
+ * so its real shape varies with screen size; 3:1 is a good middle ground.
+ */
+export const IMAGE_RATIOS = { cover: 16 / 9, wide: 3, split: 4 / 5, triple: 9 / 16, card: 4 / 3 } as const;
+
 /** Options shown in the editor's "Add block" dropdown. */
 export const BLOCK_OPTIONS = [
   { value: "cover", label: "Cover picture (large hero)" },

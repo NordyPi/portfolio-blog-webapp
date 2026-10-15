@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { deletePost, publishPost, savePost, translatePost, unpublishPost } from "@/app/admin/actions";
 import { BlockEditor, TranslationBadge } from "@/components/admin/block-editor";
 import { ImageSlot } from "@/components/admin/media-slots";
-import { BLOCK_OPTIONS, newBlock, type Block, type BlockOption } from "@/lib/blocks";
+import { BLOCK_OPTIONS, IMAGE_RATIOS, newBlock, type Block, type BlockOption } from "@/lib/blocks";
 import { slugify, type ActionResult, type EditorMedia, type EditorPost, type EditorState, type PostInput } from "@/lib/editor-types";
 
 type Lang = "en" | "ja";
@@ -202,7 +202,7 @@ export function PostEditor({ initial }: { initial: EditorState }) {
         <div>
           <span className={labelClass}>Card image</span>
           <div className="mt-1">
-            <ImageSlot mediaId={post.coverImageId} media={media} onChange={(id) => set("coverImageId", id)} onUploaded={registerMedia} aspect="aspect-[4/3]" />
+            <ImageSlot mediaId={post.coverImageId} media={media} onChange={(id) => set("coverImageId", id)} onUploaded={registerMedia} ratio={IMAGE_RATIOS.card} />
           </div>
           <span className="mt-1 block text-xs text-muted">Shown on the {kind} grid and in subscriber emails.</span>
         </div>

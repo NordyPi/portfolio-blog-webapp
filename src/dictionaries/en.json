@@ -96,6 +96,13 @@
     "nameLabel": "Display name",
     "photoLabel": "Profile photo",
     "photoHelp": "JPG, PNG or WebP, up to 10 MB.",
+    "choosePhoto": "Choose photo",
+    "adjustPhoto": "Adjust",
+    "cropTitle": "Position your photo",
+    "cropZoom": "Zoom",
+    "cropCancel": "Cancel",
+    "cropApply": "Use this",
+    "cropUnreadable": "This photo can't be previewed in your browser. Please choose a JPG or PNG.",
     "save": "Save",
     "saved": "Saved!"
   }

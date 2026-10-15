@@ -1,9 +1,9 @@
 import { after } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { toMediaView } from "@/lib/media";
-import { MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, processVideo, saveImage, stageVideo, UploadError } from "@/lib/uploads";
+import { cropFromForm, MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, processVideo, saveImage, stageVideo, UploadError } from "@/lib/uploads";
 
-/** Admin-only upload endpoint. Body: multipart form with `file` (and optional `alt`). */
+/** Admin-only upload endpoint. Body: multipart form with `file`, and optional `alt` and `crop` (JSON). */
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (user?.role !== "ADMIN") return Response.json({ error: "Not found" }, { status: 404 });
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       return Response.json({ media: toMediaView(media), status: media.status });
     }
     if (file.size > MAX_IMAGE_BYTES) return Response.json({ error: "Images must be under 30 MB." }, { status: 413 });
-    const media = await saveImage(Buffer.from(await file.arrayBuffer()), { alt });
+    const media = await saveImage(Buffer.from(await file.arrayBuffer()), { alt, crop: cropFromForm(form!) });
     return Response.json({ media: toMediaView(media), status: media.status });
   } catch (e) {
     if (e instanceof UploadError) return Response.json({ error: e.message }, { status: 400 });

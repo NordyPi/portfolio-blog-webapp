@@ -96,6 +96,13 @@
     "nameLabel": "表示名",
     "photoLabel": "プロフィール写真",
     "photoHelp": "JPG・PNG・WebP、10MBまで。",
+    "choosePhoto": "写真を選ぶ",
+    "adjustPhoto": "調整",
+    "cropTitle": "写真の位置を調整",
+    "cropZoom": "拡大",
+    "cropCancel": "キャンセル",
+    "cropApply": "この写真を使う",
+    "cropUnreadable": "この写真はブラウザでプレビューできません。JPGまたはPNGを選んでください。",
     "save": "保存",
     "saved": "保存しました！"
   }

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ImageCropDialog, type CropArea } from "@/components/image-crop-dialog";
 import type { EditorMedia } from "@/lib/editor-types";
 
 type UploadResult = { media: EditorMedia } | { error: string };
 
-async function upload(file: File): Promise<UploadResult> {
+async function upload(file: File, crop?: CropArea | null): Promise<UploadResult> {
   const body = new FormData();
   body.set("file", file);
+  if (crop) body.set("crop", JSON.stringify(crop));
   try {
     const res = await fetch("/api/admin/media", { method: "POST", body });
     const json = await res.json().catch(() => ({ error: `Upload failed (${res.status})` }));
@@ -55,31 +57,33 @@ function UploadButton({
   );
 }
 
-/** Image placeholder / preview with upload, replace and remove. */
+/** Image placeholder / preview. Choosing a photo opens the cropper framed to this slot's shape, then uploads. */
 export function ImageSlot({
   mediaId,
   media,
   onChange,
   onUploaded,
-  aspect,
+  ratio,
   label = "Upload image",
 }: {
   mediaId: string | null;
   media: Record<string, EditorMedia>;
   onChange: (id: string | null) => void;
   onUploaded: (m: EditorMedia) => void;
-  /** Tailwind aspect class, e.g. "aspect-[16/9]" */
-  aspect: string;
+  /** Width / height of the slot, e.g. 16 / 9. Used for both the preview box and the crop frame. */
+  ratio: number;
   label?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cropping, setCropping] = useState<File | null>(null);
   const m = mediaId ? media[mediaId] : undefined;
 
-  async function handle(file: File) {
+  async function handle(file: File, crop: CropArea | null) {
+    setCropping(null);
     setBusy(true);
     setError(null);
-    const res = await upload(file);
+    const res = await upload(file, crop);
     setBusy(false);
     if ("error" in res) return setError(res.error);
     onUploaded(res.media);
@@ -88,7 +92,23 @@ export function ImageSlot({
 
   return (
     <div>
-      <div className={`relative overflow-hidden rounded-xl bg-surface-2 ${aspect}`}>
+      {cropping && (
+        <ImageCropDialog
+          file={cropping}
+          aspect={ratio}
+          labels={{
+            title: "Frame your photo",
+            zoom: "Zoom",
+            cancel: "Cancel",
+            apply: "Crop & upload",
+            skip: "Use whole photo",
+            unreadable: "This browser can't preview this photo (HEIC?). Export it as JPG, or use the whole photo.",
+          }}
+          onCancel={() => setCropping(null)}
+          onConfirm={(area) => handle(cropping, area)}
+        />
+      )}
+      <div className="relative overflow-hidden rounded-xl bg-surface-2" style={{ aspectRatio: ratio }}>
         {m && (
           // eslint-disable-next-line @next/next/no-img-element -- admin preview
           <img src={m.src} srcSet={m.srcSet ?? undefined} sizes="600px" alt="" className="absolute inset-0 size-full object-cover" />
@@ -98,7 +118,7 @@ export function ImageSlot({
             <span className="rounded-full bg-surface px-3 py-1.5 text-sm shadow-sm">Uploading…</span>
           ) : (
             <>
-              <UploadButton accept="image/jpeg,image/png,image/webp,image/avif" label={m ? "Replace" : label} onFile={handle} />
+              <UploadButton accept="image/jpeg,image/png,image/webp,image/avif" label={m ? "Replace" : label} onFile={setCropping} />
               {m && (
                 <button
                   type="button"

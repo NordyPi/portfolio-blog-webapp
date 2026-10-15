@@ -23,11 +23,5 @@ export default async function ProfilePage({ params }: PageProps<"/[lang]/profile
 async function Profile({ lang }: { lang: Locale }) {
   const user = await getCurrentUser();
   if (!user) redirect(`/${lang}/sign-in`);
-  const t = getDictionary(lang).profile;
-  return (
-    <ProfileForm
-      user={{ name: user.name, image: user.image, email: user.email }}
-      labels={{ name: t.nameLabel, photo: t.photoLabel, photoHelp: t.photoHelp, save: t.save, saved: t.saved }}
-    />
-  );
+  return <ProfileForm user={{ name: user.name, image: user.image, email: user.email }} t={getDictionary(lang).profile} />;
 }

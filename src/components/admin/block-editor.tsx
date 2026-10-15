@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ImageSlot, VideoSlot } from "@/components/admin/media-slots";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
-import { BLOCK_OPTIONS, parseYouTubeId, type Block, type Localized } from "@/lib/blocks";
+import { BLOCK_OPTIONS, IMAGE_RATIOS, parseYouTubeId, type Block, type Localized } from "@/lib/blocks";
 import type { EditorMedia } from "@/lib/editor-types";
 
 type Lang = "en" | "ja";
@@ -87,7 +87,7 @@ export function BlockEditor({ block, lang, isTranslation, staleKeys, media, onCh
               {...slot}
               mediaId={block.mediaId}
               onChange={(mediaId) => onChange({ ...block, mediaId })}
-              aspect={block.type === "cover" ? "aspect-[16/9]" : "aspect-[4/1]"}
+              ratio={IMAGE_RATIOS[block.type]}
             />
             <Caption value={block.caption} lang={lang} onChange={(caption) => onChange({ ...block, caption })} stale={stale("caption")} />
           </>
@@ -95,7 +95,7 @@ export function BlockEditor({ block, lang, isTranslation, staleKeys, media, onCh
       case "split": {
         const image = (
           <div key="image">
-            <ImageSlot {...slot} mediaId={block.mediaId} onChange={(mediaId) => onChange({ ...block, mediaId })} aspect="aspect-[4/5]" />
+            <ImageSlot {...slot} mediaId={block.mediaId} onChange={(mediaId) => onChange({ ...block, mediaId })} ratio={IMAGE_RATIOS.split} />
           </div>
         );
         const text = (
@@ -135,7 +135,7 @@ export function BlockEditor({ block, lang, isTranslation, staleKeys, media, onCh
                   {...slot}
                   mediaId={id}
                   label="Upload"
-                  aspect="aspect-[9/16]"
+                  ratio={IMAGE_RATIOS.triple}
                   onChange={(mediaId) => {
                     const mediaIds = [...block.mediaIds] as typeof block.mediaIds;
                     mediaIds[i] = mediaId;
