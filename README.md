@@ -1,151 +1,176 @@
-# Travel blog & portfolio
+# loklinnord.com — bilingual travel blog & portfolio
 
-A bilingual (English / 日本語) travel blog and portfolio, self-hosted on a home Linux server.
+**Live:** [loklinnord.com](https://loklinnord.com)
 
-- **Blog & portfolio** built from a block-based editor (cover, wide, image + text, 3 portrait photos, text, video)
-- **English ⇄ Japanese**: write in either language; DeepL translates on demand, and only re-translates fields whose source changed so manual edits to translations are kept
-- **Family accounts**: invite-only, passwordless (magic-link) sign-in, private threaded comments, profile photos
-- **Mailing list** with double opt-in, one-click unsubscribe, and an optional email to subscribers when you publish
-- **Privacy**: GPS/camera metadata is stripped from every uploaded photo and video
+A full-stack web app I designed and self-host on a home Linux server. It's where I write about my travels in
+**English and Japanese**, share private updates with family, and show the projects I've built — including this one.
 
-**Stack:** Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL 18 + Prisma 7 · Better Auth · Tiptap · sharp + ffmpeg · Docker Compose · nginx · Cloudflare Tunnel · GitHub Actions
+> This repository is the source code for my personal site. It isn't a template or a packaged product.
+> © Loklin Nord — all rights reserved.
 
 ---
 
-## Project layout
+## What it does
 
+### For visitors
+- **Blog and portfolio** laid out from rich, photo-led blocks: hero covers, full-width banners, image + text
+  splits, rows of three portrait phone photos, rich text, and uploaded or YouTube video.
+- **English / 日本語** throughout, with a language switcher and language-specific URLs (`/en/…`, `/ja/…`) that
+  search engines index separately.
+- **Mailing list** with double opt-in, an email when a new post is published, and one-click unsubscribe.
+- **Contact form** that delivers straight to my inbox, with spam protection.
+- Responsive from phones to wide screens, with light and dark themes.
+
+### For family
+- **Invite-only accounts** — no public sign-up. Sign-in is passwordless: a one-time link is emailed.
+- **Private, threaded comments** on posts, visible only to signed-in family members.
+- **Profiles** with a display name and a photo, positioned and zoomed in a cropper with a circular preview.
+
+### For me (the admin portal)
+- **Block-based post editor**: add, reorder and delete blocks; edit text inline with a rich-text editor;
+  save drafts; preview exactly as readers will see it; publish or unpublish.
+- **Write in either language, translate on demand.** One click sends the post through DeepL; I review and edit
+  the result before publishing. Re-translating only touches fields whose source text changed, so my manual
+  fixes to translations are never overwritten.
+- **Photo cropping before upload**, framed to each block's shape.
+- **Video uploads** transcoded in the background to a format every browser plays.
+- **Family invite management**, subscriber list, and an inbox of contact messages.
+
+---
+
+## Tech stack
+
+| Area | Technology | Why |
+| --- | --- | --- |
+| Framework | **Next.js 16** (App Router, React Server Components, Cache Components), **React 19**, **TypeScript** | Server-rendered pages that load fast and are readable by search engines; types end to end. |
+| Styling | **Tailwind CSS 4** with design tokens | The whole palette and font set are a few variables, with automatic dark mode. |
+| Database | **PostgreSQL 18** + **Prisma 7** | Relational data (posts, comments, users, invites) with type-safe queries and versioned migrations. |
+| Auth | **Better Auth** (magic links) | Passwordless sign-in suits family members; invite-only rules are enforced in database hooks. |
+| Editor | **Tiptap** | A lightweight rich-text editor limited to the formatting the site supports. |
+| Media | **sharp**, **ffmpeg**, **react-easy-crop** | Image resizing/cropping to WebP and video transcoding, with metadata stripped. |
+| Translation | **DeepL API** | High-quality EN⇄JA translation, called only when I ask for it. |
+| Email | **Resend** | Transactional email and newsletters from my own domain. |
+| Hosting | **Docker Compose** on a home Linux server, **nginx**, **Cloudflare Tunnel** | Self-hosted with no open ports for the website, free HTTPS, and the server's IP kept private. |
+| CI/CD | **GitHub Actions** → **GitHub Container Registry** | Every push is linted, type-checked and tested, then built into images the server pulls. |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+  V[Visitor] -->|HTTPS| CF[Cloudflare]
+  CF -->|Tunnel| CFD[cloudflared]
+  subgraph S["Home server (Docker Compose)"]
+    CFD --> N[nginx]
+    N -->|/media| U[(Uploads volume)]
+    N --> A[Next.js app]
+    A --> DB[(PostgreSQL)]
+    A --> U
+    B[Nightly backup] --> DB
+    B --> U
+  end
+  A -->|translate| DL[DeepL]
+  A -->|email| RS[Resend]
+  GH[GitHub Actions] -->|images| R[GitHub Container Registry]
+  R -->|pull on deploy| A
 ```
-src/
-  app/[lang]/        public site (home/about, blog, portfolio, contact, sign-in, profile…)
-  app/admin/         admin portal (post editor, invites, subscribers, messages)
-  app/api/           auth, media uploads, one-click unsubscribe
-  components/        UI (block renderer, header, comments, admin editor…)
-  dictionaries/      en.json / ja.json — all fixed UI text
-  config/site.ts     your name and social links
-  lib/               data access, auth, uploads, translation, email, newsletter
-prisma/              database schema and migrations
-deploy/              nginx config, backup and deploy scripts
-tests/               unit tests (npm test)
-```
 
-## Customizing
+- **nginx** serves uploaded photos and video directly from disk, so the Node.js app only renders pages.
+- **Cloudflare Tunnel** is an outbound connection from the server, so no inbound ports are open for the website
+  and it keeps working if the home IP address changes.
+- **Two images** are built per commit: the site, and a small *migrator* that applies database migrations on
+  every deploy before the new version starts.
+- **No secrets in images.** The images are built publicly; credentials exist only in an environment file on
+  the server and are injected when the containers start.
 
-| What | Where |
+---
+
+## Engineering highlights
+
+**Caching that stays correct.** Public pages are prerendered and cached using Next.js Cache Components. Every
+database read goes through one data module ([`src/lib/content.ts`](src/lib/content.ts)); publishing or editing a
+post invalidates the cache by tag, so changes appear immediately. Anything personal — login state, family
+comments — is streamed per request inside `<Suspense>` and never cached. The production build needs no database
+at all, which keeps CI simple and private data out of the build.
+
+**Invite-only, enforced twice.** Magic links are only emailed to existing accounts, the admin, or addresses
+holding a valid invite; everyone else receives an identical response, so the form can't be used to discover who
+has an account. Independently, a database hook refuses to create any account without a valid, unexpired,
+single-use invite. Invite tokens are stored only as SHA-256 hashes. ([`src/lib/auth.ts`](src/lib/auth.ts))
+
+**Translation that respects human edits.** Each translatable field records a fingerprint of the source text it
+was translated from. Re-translating sends only fields whose source changed, leaving manual edits elsewhere
+untouched. This is covered by unit tests. ([`src/lib/translate.ts`](src/lib/translate.ts),
+[`tests/translate.test.ts`](tests/translate.test.ts))
+
+**Privacy by default for media.** Phone photos and videos carry GPS coordinates. Every image is decoded,
+re-oriented, optionally cropped and re-encoded with *no* metadata; every video is transcoded to H.264 with all
+metadata dropped. Verified with test files carrying GPS tags. ([`src/lib/uploads.ts`](src/lib/uploads.ts))
+
+**Cropping on the server, chosen in the browser.** The cropper only records a rectangle; the server crops the
+full-resolution original after applying EXIF rotation, so there is no double compression and sideways phone
+photos crop where expected. One crop component serves both round profile photos and editor image slots.
+
+**Safe rich text.** Editor output is sanitized on the server against a small allowlist on every save, so it can
+be rendered safely. Server Actions re-check authorization themselves rather than trusting the UI.
+
+**Email done properly.** Double opt-in, RFC 8058 one-click unsubscribe headers, a guard that makes a
+"new post" email impossible to send twice, and confirm/unsubscribe pages that act on a button press, so
+email link scanners can't trigger them.
+
+---
+
+## How it was built
+
+**1. Requirements.** I started from a written spec: a travel blog that doubles as an about-me and portfolio site,
+bilingual, with family-only comments, a block-based post builder, a mailing list and self-hosting on my home
+server.
+
+**2. Decisions before code.** Working through the spec raised questions that changed the design:
+
+| Question | Decision |
 | --- | --- |
-| Colors (light & dark) | the `SITE COLORS` block at the top of `src/app/globals.css` |
-| Your name, social links | `src/config/site.ts` |
-| About-me text and all UI wording | `src/dictionaries/en.json` and `ja.json` (Japanese must have every key English has, or the build fails) |
-| Fonts | `src/app/fonts.ts` |
+| How should the public reach a server in someone's home? | **Cloudflare Tunnel** instead of router port forwarding: no open ports, free HTTPS, IP stays private. |
+| Which auth library? | **Better Auth** over the originally planned Auth.js: first-class magic links, and database hooks that made invite-only rules simple to enforce. |
+| How do family members sign in without passwords, without letting strangers sign up? | Magic links, gated by single-use invites tied to one email address. |
+| Translate automatically on publish? | **No** — translate on demand so I can review and edit before publishing, and only re-translate what changed. |
+| Translation storage? | One block layout per post with `{ en, ja }` text in each block, so the two languages can't drift apart. |
+| Where are images built? | In **CI**, not on the home server. |
+| What about photo metadata? | Strip it from everything — travel photos taken at home would otherwise publish my address. |
+
+**3. Building in layers.** Data model → auth → public pages → the admin editor → translation, email and media
+pipelines → containers and CI/CD. Each layer was verified before moving on: security checks (unauthorized sign-in
+attempts, revoked invites, path traversal), metadata stripping on real test files, newsletter de-duplication,
+and production builds with the database deliberately unreachable.
+
+**4. Shipping.** DNS moved to Cloudflare, the tunnel connected, transactional email verified on my domain, and
+the server hardened (key-only SSH).
+
+**Built with AI pair-programming.** I built this with Claude Code as a pair programmer. I set the requirements and
+made the product, design and architecture decisions; Claude proposed approaches, wrote much of the code with me,
+and we tested each step together. I've since documented, deployed and operate the system myself.
 
 ---
 
-## Local development (Windows)
+## Quality
 
-Requires Node.js 24, PostgreSQL and ffmpeg (all installed via winget).
-
-```bash
-npm install
-npm run db:migrate        # create/update tables
-npm run db:seed-demo      # optional: two demo posts with placeholder photos
-npm run dev               # http://localhost:3000
-```
-
-`.env` holds local settings. Without `RESEND_API_KEY`, emails (sign-in links, confirmations) are **printed to the terminal** instead of being sent — copy the link from there. Sign in with the `ADMIN_EMAIL` address to get the admin portal at `/admin`.
-
-Checks: `npm run lint`, `npm run typecheck`, `npm test`.
+- **CI on every push:** ESLint, TypeScript type-checking and unit tests must pass before images are built.
+- **Unit tests** with Node's built-in test runner.
+- **Strict types** across the stack, including generated route types and Prisma models.
+- **Operations:** nightly database and media backups, versioned database migrations applied automatically on deploy.
 
 ---
 
-## Deploying to the home server
-
-### How it fits together
+## Repository layout
 
 ```
-visitor ──https──> Cloudflare ──tunnel──> cloudflared ─> nginx ─┬─> /media/*  (files on disk)
-                                                                 └─> app (Next.js) ─> db (Postgres)
-git push ─> GitHub Actions: lint, typecheck, test, build images ─> ghcr.io ─> server pulls them
+src/app/[lang]/     public site (English / Japanese)
+src/app/admin/      admin portal and post editor
+src/app/api/        auth, media upload, unsubscribe endpoints
+src/components/     UI components
+src/lib/            data access, auth, uploads, translation, email
+prisma/             schema and migrations
+deploy/             server configuration
+tests/              unit tests
 ```
-
-No ports need to be open on your router: the Cloudflare Tunnel is an outbound connection.
-
-### 1. GitHub
-
-1. Create a repository and push this folder to it (`main` branch).
-2. **Settings → Secrets and variables → Actions → Variables**: add `SITE_URL` = `https://yourdomain.com`.
-3. Every push to `main` runs the checks and publishes two images: `ghcr.io/<you>/<repo>:latest` and `:migrator`.
-4. If the repository is **public** (recommended for a portfolio), make the package public too (**Your profile → Packages → the package → Package settings → Change visibility**). If it's private, run `docker login ghcr.io` on the server once with a personal access token that has `read:packages`.
-
-### 2. Server (first time)
-
-```bash
-git clone https://github.com/<you>/<repo>.git ~/site
-cd ~/site
-cp .env.production.example .env
-nano .env               # fill in — generate secrets with: openssl rand -hex 32
-chmod +x deploy/*.sh
-./deploy/deploy.sh
-```
-
-The site is now on your LAN at `http://<server-ip>:8080`. Sign in with your `ADMIN_EMAIL`, then open `/admin`.
-
-### 3. Domain → Cloudflare (domain stays registered at GoDaddy)
-
-1. Create a free Cloudflare account → **Add a site** → enter your domain → Free plan. Cloudflare imports your existing DNS records; check they look right (especially MX records if you use email on the domain).
-2. Cloudflare shows two **nameservers**. In GoDaddy: **My Products → your domain → DNS → Nameservers → Change → "I'll use my own nameservers"** and enter them.
-3. Wait until Cloudflare says the site is active (often under an hour, up to 24h).
-4. Cloudflare dashboard → **Zero Trust → Networks → Tunnels → Create a tunnel** (type *Cloudflared*). Copy the **token** into `CLOUDFLARE_TUNNEL_TOKEN` in `.env`.
-5. In the tunnel, add **Public hostnames**: `yourdomain.com` (and `www`) → service `http://nginx:80`.
-6. `./deploy/deploy.sh` — it starts `cloudflared` automatically once the token is set.
-7. Once the site works through the domain, **remove the port-forwarding rules from your router** — they're no longer needed.
-
-### 4. Email (Resend)
-
-1. Sign up at resend.com → **Domains → Add domain** → add the DNS records it shows in Cloudflare → verify.
-2. Create an API key → `RESEND_API_KEY`. Set `EMAIL_FROM` to an address on that domain.
-3. `./deploy/deploy.sh`.
-
-The free tier sends 3,000 emails/month (100/day): plenty for magic links and a modest mailing list.
-
-### 5. Translation (DeepL)
-
-Sign up for **DeepL API Free** (500,000 characters/month), copy the key into `DEEPL_API_KEY`, redeploy.
-
-### Updating
-
-Push to `main`, wait for the GitHub Action to finish, then on the server:
-
-```bash
-cd ~/site && git pull && ./deploy/deploy.sh
-```
-
-(`git pull` is only needed when `docker-compose.yml` or `deploy/` changed.) Database migrations run automatically.
-
----
-
-## Backups
-
-The `backup` container runs daily:
-
-- `~/site/backups/db/db_<date>.dump` — full database dump (last 14 days kept, `BACKUP_KEEP_DAYS`)
-- `~/site/backups/uploads/` — a copy of every uploaded file
-
-That folder is on the same disk as the site, so **also copy it somewhere else** regularly (an external drive, another computer, or cloud storage such as Backblaze B2 via `rclone`).
-
-**Restore the database** (replaces current data):
-
-```bash
-cd ~/site
-docker compose stop app
-docker compose exec -T db pg_restore --clean --if-exists -U site -d site < backups/db/db_YYYY-MM-DD_HHMM.dump
-docker compose start app
-```
-
-**Restore uploads:** `docker compose cp backups/uploads/. app:/data/uploads/`
-
----
-
-## Notes & limits
-
-- Video uploads are limited to 95 MB (Cloudflare's free plan rejects requests over 100 MB). Longer videos: upload to YouTube and use a YouTube block.
-- iPhone **HEIC** photos aren't supported by the image processor — iPhones usually convert to JPEG when uploading through a browser; otherwise export as JPEG first.
-- Subscriber emails are sent in English; translated posts fall back to the source language until translated.

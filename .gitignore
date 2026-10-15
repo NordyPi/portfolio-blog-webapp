@@ -51,3 +51,6 @@ next-env.d.ts
 
 # local Claude preview config
 /.claude/
+
+# private notes (handbook, ops) - never published
+/private/
