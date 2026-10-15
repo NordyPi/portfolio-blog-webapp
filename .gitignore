@@ -48,3 +48,6 @@ next-env.d.ts
 
 # uploaded media (local dev)
 /uploads/
+
+# local Claude preview config
+/.claude/
