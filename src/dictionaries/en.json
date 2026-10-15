@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "tagline": "Travel stories, photos & things I've built"
+  },
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "portfolio": "Portfolio",
+    "contact": "Contact",
+    "language": "Language",
+    "menu": "Menu",
+    "signIn": "Family sign in",
+    "signOut": "Sign out",
+    "profile": "My profile",
+    "admin": "Admin"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "home": {
+    "eyebrow": "Hello, I'm",
+    "name": "Loklin Nord",
+    "intro": "I'm a developer who loves to travel. This site is where I share stories and photos from the road — and the projects I've built along the way.",
+    "aboutHeading": "About me",
+    "about": [
+      "Replace this with a few paragraphs about yourself: where you're from, what you do, and what you're looking for.",
+      "This page doubles as the About section of the site, so it's a good place to mention the kind of roles you're interested in."
+    ],
+    "latestPosts": "Latest stories",
+    "featuredProjects": "Recent projects",
+    "viewAll": "View all"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Stories and photos from the road.",
+    "empty": "No posts yet — check back soon."
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "Things I've designed and built.",
+    "empty": "No projects yet — check back soon."
+  },
+  "post": {
+    "backToBlog": "All posts",
+    "backToPortfolio": "All projects",
+    "translatedFromJa": "Originally written in Japanese and translated.",
+    "translatedFromEn": "Originally written in English and translated."
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Want to get in touch, or hear about new posts? Here's how.",
+    "subscribeHeading": "Get new posts by email",
+    "subscribeBody": "One email when I publish something new. No spam, unsubscribe any time.",
+    "emailLabel": "Email address",
+    "subscribeButton": "Subscribe",
+    "subscribeSuccess": "Almost done! Check your inbox for a confirmation link.",
+    "messageHeading": "Send me a message",
+    "nameLabel": "Your name",
+    "messageLabel": "Message",
+    "sendButton": "Send message",
+    "sendSuccess": "Thanks! Your message has been sent.",
+    "error": "Something went wrong. Please try again.",
+    "confirmButton": "Confirm my subscription",
+    "unsubscribeButton": "Unsubscribe",
+    "confirmedTitle": "You're subscribed",
+    "confirmedBody": "Thanks for confirming. You'll get an email when I publish something new.",
+    "confirmFailedTitle": "Link expired",
+    "confirmFailedBody": "This confirmation link is invalid or has already been used.",
+    "unsubscribedTitle": "You've been unsubscribed",
+    "unsubscribedBody": "You won't receive any more emails from this list."
+  },
+  "comments": {
+    "heading": "Family comments",
+    "signInPrompt": "Comments are private to family members.",
+    "signInLink": "Sign in to read and leave comments.",
+    "placeholder": "Write a comment…",
+    "replyPlaceholder": "Write a reply…",
+    "submit": "Post",
+    "reply": "Reply",
+    "cancel": "Cancel",
+    "empty": "No comments yet. Be the first!"
+  },
+  "auth": {
+    "signInTitle": "Family sign in",
+    "signInBody": "Enter your email and we'll send you a sign-in link. No password needed.",
+    "sendLink": "Email me a link",
+    "checkEmail": "If that email belongs to a family account, a sign-in link is on its way. It's valid for 15 minutes.",
+    "joinTitle": "Join the family",
+    "joinBody": "You've been invited! Enter your name and we'll email you a link to finish creating your account.",
+    "joinInvalid": "This invite link is invalid, expired, or has already been used. Ask for a new one.",
+    "nameLabel": "Your name",
+    "joinButton": "Create my account"
+  },
+  "profile": {
+    "title": "My profile",
+    "nameLabel": "Display name",
+    "photoLabel": "Profile photo",
+    "photoHelp": "JPG, PNG or WebP, up to 10 MB.",
+    "save": "Save",
+    "saved": "Saved!"
+  }
+}

@@ -1,0 +1,98 @@
+# Production stack for the home server. Lives in ~/site on the server next to a .env file
+# (copy .env.production.example). Deploy/update with:  ./deploy/deploy.sh
+#
+#   db          PostgreSQL (data in the "pgdata" volume)
+#   migrate     applies database migrations, then exits
+#   app         the Next.js site
+#   nginx       serves /media from disk, proxies everything else to app
+#   backup      nightly database dump + copy of new uploads into ./backups
+#   cloudflared Cloudflare Tunnel (enable with: docker compose --profile tunnel up -d)
+
+name: site
+
+x-db-url: &db-url postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    image: ${APP_IMAGE}:migrator
+    environment:
+      DATABASE_URL: *db-url
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    image: ${APP_IMAGE}:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: *db-url
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # Give in-flight requests and background jobs (video processing, newsletters) time to finish.
+    stop_grace_period: 30s
+
+  nginx:
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    ports:
+      # Reachable on your LAN at http://<server-ip>:8080 for testing.
+      # Not forwarded by your router: public traffic arrives through the Cloudflare Tunnel.
+      - "8080:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - uploads:/data/uploads:ro
+    depends_on:
+      - app
+
+  backup:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./deploy/backup.sh:/backup.sh:ro
+      - uploads:/data/uploads:ro
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+    profiles: ["tunnel"]
+
+volumes:
+  pgdata:
+  uploads:

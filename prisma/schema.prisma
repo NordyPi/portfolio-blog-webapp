@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth (shape required by Better Auth; extra fields are ours)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  FAMILY
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(FAMILY)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  comments      Comment[]
+  posts         Post[]
+  invites       Invite[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+/// Single-use, expiring invite that lets one specific email create a FAMILY account.
+/// Only a SHA-256 hash of the token is stored; the raw token exists only in the invite email.
+model Invite {
+  id          String    @id @default(cuid())
+  email       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  createdById String?
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// Content
+// ---------------------------------------------------------------------------
+
+enum PostType {
+  BLOG
+  PROJECT
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum Lang {
+  EN
+  JA
+}
+
+model Post {
+  id         String     @id @default(cuid())
+  type       PostType
+  status     PostStatus @default(DRAFT)
+  slug       String
+  /// The language the post was written in; DeepL translates into the other one.
+  sourceLang Lang       @default(EN)
+
+  titleEn   String @default("")
+  titleJa   String @default("")
+  excerptEn String @default("")
+  excerptJa String @default("")
+
+  /// Ordered list of content blocks. Layout and media are shared between languages;
+  /// text fields inside each block are stored as { en, ja }. See src/lib/blocks.ts.
+  blocks           Json @default("[]")
+  /// fieldKey -> hash of the source text at the time it was last translated.
+  /// Lets us re-translate only fields whose source changed, keeping manual edits elsewhere.
+  translationState Json @default("{}")
+
+  coverImageId String?
+  coverImage   Media?  @relation("PostCover", fields: [coverImageId], references: [id], onDelete: SetNull)
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  publishedAt      DateTime?
+  newsletterSentAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  comments Comment[]
+
+  @@unique([type, slug])
+  @@index([type, status, publishedAt])
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+enum MediaStatus {
+  /// Video is being transcoded in the background.
+  PROCESSING
+  READY
+  FAILED
+}
+
+/// An uploaded file stored on disk under UPLOAD_DIR (never in the database).
+/// Images are stored as WebP in several widths with all metadata (incl. GPS) stripped.
+model Media {
+  id        String      @id @default(cuid())
+  kind      MediaKind
+  status    MediaStatus @default(READY)
+  /// Path relative to UPLOAD_DIR of the largest/original rendition, e.g. "images/abc/1920.webp".
+  path      String
+  mimeType  String
+  width     Int?
+  height    Int?
+  sizeBytes Int
+  /// Widths available for images (e.g. [640, 1280, 1920]); empty for videos.
+  widths    Int[]
+  /// Poster frame for videos (path relative to UPLOAD_DIR), if any.
+  posterPath String?
+  alt       String    @default("")
+  createdAt DateTime  @default(now())
+
+  coverFor Post[] @relation("PostCover")
+}
+
+/// Family-only comments. Threaded via parentId.
+model Comment {
+  id        String    @id @default(cuid())
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("Replies")
+  body      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([postId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Mailing list & contact
+// ---------------------------------------------------------------------------
+
+enum SubscriberStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
+}
+
+model Subscriber {
+  id               String           @id @default(cuid())
+  email            String           @unique
+  status           SubscriberStatus @default(PENDING)
+  /// Hash of the double-opt-in token sent in the confirmation email.
+  confirmTokenHash String?          @unique
+  /// Random token embedded in every newsletter's unsubscribe link.
+  unsubscribeToken String           @unique
+  createdAt        DateTime         @default(now())
+  confirmedAt      DateTime?
+  unsubscribedAt   DateTime?
+}
+
+/// Contact-form submissions are stored as well as emailed, so nothing is lost if email delivery fails.
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}

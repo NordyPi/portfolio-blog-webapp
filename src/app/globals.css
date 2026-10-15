@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   SITE COLORS — change these to re-theme the whole site.
+   Every component uses these tokens (e.g. bg-surface, text-muted, bg-accent),
+   never raw colors, so editing the values below is all you need.
+   ========================================================================== */
+:root {
+  --bg: #faf8f4;              /* page background */
+  --surface: #ffffff;         /* cards, header, inputs */
+  --surface-2: #f1eee7;       /* subtle fills, placeholders */
+  --fg: #1d1b18;              /* main text */
+  --muted: #6c675e;           /* secondary text, dates */
+  --border: #e3dfd5;          /* dividers, card borders */
+  --accent: #b9522c;          /* links, buttons, highlights */
+  --accent-fg: #ffffff;       /* text on top of the accent color */
+  --danger: #b42318;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141311;
+    --surface: #1c1b18;
+    --surface-2: #262420;
+    --fg: #f2eee6;
+    --muted: #a59f93;
+    --border: #322f2a;
+    --accent: #e9845a;
+    --accent-fg: #1d1b18;
+    --danger: #f97066;
+  }
+}
+
+/* Expose the tokens to Tailwind as colors: bg-bg, bg-surface, text-fg, text-muted, border-border, bg-accent … */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-body), var(--font-jp), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), var(--font-jp), ui-serif, Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Rich text produced by the post editor (only p, strong, em, s, a, ul, ol, li, blockquote, br). */
+.rich-text {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+.rich-text > * + * {
+  margin-top: 1em;
+}
+.rich-text a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rich-text ul {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+.rich-text ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.rich-text li + li {
+  margin-top: 0.35em;
+}
+.rich-text blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1em;
+  color: var(--muted);
+  font-style: italic;
+}

@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+.next
+src/generated
+uploads
+backups
+.env
+.env.*
+!.env.production.example
+*.log
+tests
+README.md

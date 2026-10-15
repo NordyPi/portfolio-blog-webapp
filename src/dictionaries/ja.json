@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "tagline": "旅の記録、写真、そして作ったもの"
+  },
+  "nav": {
+    "home": "ホーム",
+    "blog": "ブログ",
+    "portfolio": "ポートフォリオ",
+    "contact": "お問い合わせ",
+    "language": "言語",
+    "menu": "メニュー",
+    "signIn": "家族ログイン",
+    "signOut": "ログアウト",
+    "profile": "プロフィール",
+    "admin": "管理"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "home": {
+    "eyebrow": "こんにちは、",
+    "name": "Loklin Nord",
+    "intro": "旅が大好きな開発者です。このサイトでは旅先での出来事や写真、そしてこれまでに作ったプロジェクトを紹介しています。",
+    "aboutHeading": "自己紹介",
+    "about": [
+      "ここに自己紹介を書いてください：出身地、仕事、そして今探していること。",
+      "このページはサイトの「自己紹介」も兼ねています。興味のある仕事についても書いておくと良いでしょう。"
+    ],
+    "latestPosts": "最新の記事",
+    "featuredProjects": "最近のプロジェクト",
+    "viewAll": "すべて見る"
+  },
+  "blog": {
+    "title": "ブログ",
+    "subtitle": "旅先からの物語と写真。",
+    "empty": "まだ記事がありません。もうしばらくお待ちください。"
+  },
+  "portfolio": {
+    "title": "ポートフォリオ",
+    "subtitle": "これまでに設計・開発したもの。",
+    "empty": "まだプロジェクトがありません。"
+  },
+  "post": {
+    "backToBlog": "記事一覧",
+    "backToPortfolio": "プロジェクト一覧",
+    "translatedFromJa": "この記事は日本語で書かれ、翻訳されています。",
+    "translatedFromEn": "この記事は英語で書かれ、翻訳されています。"
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "subtitle": "連絡を取りたい方、新しい記事の通知を受け取りたい方はこちら。",
+    "subscribeHeading": "新しい記事をメールで受け取る",
+    "subscribeBody": "新しい記事を公開したときに一通だけお送りします（英語）。いつでも配信停止できます。",
+    "emailLabel": "メールアドレス",
+    "subscribeButton": "登録する",
+    "subscribeSuccess": "あと少しです！確認メールのリンクをクリックしてください。",
+    "messageHeading": "メッセージを送る",
+    "nameLabel": "お名前",
+    "messageLabel": "メッセージ",
+    "sendButton": "送信",
+    "sendSuccess": "ありがとうございます！メッセージを送信しました。",
+    "error": "エラーが発生しました。もう一度お試しください。",
+    "confirmButton": "登録を確定する",
+    "unsubscribeButton": "配信を停止する",
+    "confirmedTitle": "登録が完了しました",
+    "confirmedBody": "ご確認ありがとうございます。新しい記事を公開したらメールでお知らせします。",
+    "confirmFailedTitle": "リンクの有効期限切れ",
+    "confirmFailedBody": "この確認リンクは無効か、すでに使用されています。",
+    "unsubscribedTitle": "配信を停止しました",
+    "unsubscribedBody": "今後このリストからメールは届きません。"
+  },
+  "comments": {
+    "heading": "家族のコメント",
+    "signInPrompt": "コメントは家族だけに公開されています。",
+    "signInLink": "ログインしてコメントを読む・書く",
+    "placeholder": "コメントを書く…",
+    "replyPlaceholder": "返信を書く…",
+    "submit": "投稿",
+    "reply": "返信",
+    "cancel": "キャンセル",
+    "empty": "まだコメントはありません。最初のコメントをどうぞ！"
+  },
+  "auth": {
+    "signInTitle": "家族ログイン",
+    "signInBody": "メールアドレスを入力すると、ログイン用のリンクをお送りします。パスワードは不要です。",
+    "sendLink": "リンクを送る",
+    "checkEmail": "家族アカウントのメールアドレスであれば、ログインリンクを送信しました（15分間有効）。",
+    "joinTitle": "家族アカウントの作成",
+    "joinBody": "招待されています！お名前を入力すると、アカウント作成用のリンクをメールでお送りします。",
+    "joinInvalid": "この招待リンクは無効、期限切れ、またはすでに使用されています。新しい招待を依頼してください。",
+    "nameLabel": "お名前",
+    "joinButton": "アカウントを作成"
+  },
+  "profile": {
+    "title": "プロフィール",
+    "nameLabel": "表示名",
+    "photoLabel": "プロフィール写真",
+    "photoHelp": "JPG・PNG・WebP、10MBまで。",
+    "save": "保存",
+    "saved": "保存しました！"
+  }
+}
