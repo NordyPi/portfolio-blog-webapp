@@ -4,7 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
-import { loadEditorState, PostValidationError, translationState, writePost } from "@/lib/admin-posts";
+import { dayToDate, loadEditorState, PostValidationError, translationState, writePost } from "@/lib/admin-posts";
 import { blocksSchema } from "@/lib/blocks";
 import { POSTS_TAG } from "@/lib/content";
 import { db } from "@/lib/db";
@@ -93,7 +93,9 @@ export async function publishPost(id: string, input: PostInput, opts: { notifySu
     if (!sourceTitle) throw new PostValidationError("Add a title before publishing.");
     if (saved.slug.startsWith("untitled-")) throw new PostValidationError("Give the post a real URL slug before publishing.");
 
-    await db.post.update({ where: { id }, data: { status: "PUBLISHED", publishedAt: saved.publishedAt ?? new Date() } });
+    // The editor fills in the author's local "today" when the date is empty; this is only a fallback.
+    const publishedAt = saved.publishedAt ?? dayToDate(new Date().toISOString().slice(0, 10));
+    await db.post.update({ where: { id }, data: { status: "PUBLISHED", publishedAt } });
     updateTag(POSTS_TAG);
 
     let message = "Published";

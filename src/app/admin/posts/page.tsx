@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createPost } from "@/app/admin/actions";
 import { db } from "@/lib/db";
+import { formatDate } from "@/lib/i18n";
 import { requireAdmin } from "@/lib/session";
 
 // Private admin page: navigations may block on the server (no instant-navigation static shell needed).
@@ -43,7 +44,9 @@ export default async function AdminPosts() {
                 </span>
                 <span className="text-xs uppercase tracking-wide text-muted">{p.type === "BLOG" ? "Blog" : "Project"}</span>
                 <span className="min-w-0 flex-1 truncate font-medium">{p.titleEn || p.titleJa || <em className="text-muted">Untitled</em>}</span>
-                <span className="text-xs text-muted">Edited {p.updatedAt.toLocaleDateString("en-GB")}</span>
+                <span className="text-xs text-muted">
+                  {p.publishedAt ? `${formatDate(p.publishedAt, "en")} · ` : ""}edited {p.updatedAt.toLocaleDateString("en-GB")}
+                </span>
               </Link>
             </li>
           ))}

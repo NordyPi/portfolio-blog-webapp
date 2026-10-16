@@ -26,15 +26,22 @@ export const postInputSchema = z.object({
   excerptEn: z.string().max(500),
   excerptJa: z.string().max(500),
   coverImageId: z.string().nullable(),
+  /** The post's date as a calendar day ("2026-10-16"), shown on cards and the post; null until set or published. */
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   blocks: blocksSchema,
 });
 export type PostInput = z.infer<typeof postInputSchema>;
+
+/** Today's date in the browser's own time zone, as "YYYY-MM-DD". */
+export function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export type EditorPost = PostInput & {
   id: string;
   type: "BLOG" | "PROJECT";
   status: "DRAFT" | "PUBLISHED";
-  publishedAt: string | null;
   newsletterSentAt: string | null;
   updatedAt: string;
 };

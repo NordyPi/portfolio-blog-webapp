@@ -38,7 +38,8 @@ async function listPublishedCached(type: PostKind, locale: Locale, limit: number
 
   const posts = await db.post.findMany({
     where: { type, status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
+    // Posts on the same day: most recently created first.
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
     take: limit,
     include: { coverImage: { select: mediaSelect } },
   });

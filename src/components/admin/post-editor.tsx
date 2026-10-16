@@ -6,7 +6,8 @@ import { deletePost, publishPost, savePost, translatePost, unpublishPost } from 
 import { BlockEditor, TranslationBadge } from "@/components/admin/block-editor";
 import { ImageSlot } from "@/components/admin/media-slots";
 import { BLOCK_OPTIONS, IMAGE_RATIOS, newBlock, type Block, type BlockOption } from "@/lib/blocks";
-import { slugify, type ActionResult, type EditorMedia, type EditorPost, type EditorState, type PostInput } from "@/lib/editor-types";
+import { localToday, slugify, type ActionResult, type EditorMedia, type EditorPost, type EditorState, type PostInput } from "@/lib/editor-types";
+import { formatDate } from "@/lib/i18n";
 
 type Lang = "en" | "ja";
 
@@ -18,6 +19,7 @@ const inputOf = (p: EditorPost): PostInput => ({
   excerptEn: p.excerptEn,
   excerptJa: p.excerptJa,
   coverImageId: p.coverImageId,
+  date: p.date,
   blocks: p.blocks,
 });
 
@@ -165,6 +167,28 @@ export function PostEditor({ initial }: { initial: EditorState }) {
               className={`mt-1 ${inputClass} font-display text-2xl`}
             />
           </label>
+          <div>
+            <label className="block">
+              <span className={labelClass}>Date</span>
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <input
+                  type="date"
+                  value={post.date ?? ""}
+                  min="1900-01-01"
+                  max="2100-12-31"
+                  onChange={(e) => set("date", e.target.value || null)}
+                  className={`${inputClass} w-auto`}
+                />
+                <button type="button" onClick={() => set("date", localToday())} className="text-xs text-muted hover:text-accent">
+                  Today
+                </button>
+              </div>
+            </label>
+            <span className="mt-1 block text-xs text-muted">
+              Shown on the {kind} card and at the top of the {kind}. {kind === "post" ? "Posts" : "Projects"} are listed newest first by this date.
+              {!post.date && " Left empty, it's set to the day you publish."}
+            </span>
+          </div>
           <label className="block">
             <span className={labelClass}>
               Short description for cards &amp; emails
@@ -270,7 +294,9 @@ export function PostEditor({ initial }: { initial: EditorState }) {
           onCancel={() => setPublishOpen(false)}
           onConfirm={(notifySubscribers) => {
             setPublishOpen(false);
-            run(() => publishPost(post.id, inputOf(post), { notifySubscribers }));
+            // No date yet: use today in the author's own time zone (not the server's).
+            const input = { ...inputOf(post), date: post.date ?? localToday() };
+            run(() => publishPost(post.id, input, { notifySubscribers }));
           }}
         />
       )}
@@ -297,6 +323,10 @@ function PublishDialog({
         <h2 id="publish-title" className="font-display text-2xl font-semibold">
           {post.status === "PUBLISHED" ? "Update published post" : "Publish"}
         </h2>
+        <p className="mt-3 text-sm text-muted">
+          Dated <span className="font-medium text-fg">{formatDate(post.date ?? localToday(), "en")}</span>
+          {!post.date && " (today)"}
+        </p>
         {staleCount > 0 && (
           <p className="mt-3 rounded-xl bg-accent/10 px-3 py-2 text-sm">
             {staleCount} field(s) changed since they were last translated. You can publish anyway — readers of the other language will see the older translation.

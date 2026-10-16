@@ -36,7 +36,8 @@ export async function loadEditorState(id: string): Promise<EditorState | null> {
       excerptJa: row.excerptJa,
       coverImageId: row.coverImageId,
       blocks,
-      publishedAt: row.publishedAt?.toISOString() ?? null,
+      // Dates are stored as midnight UTC of the chosen day, so the UTC date is the calendar day.
+      date: row.publishedAt?.toISOString().slice(0, 10) ?? null,
       newsletterSentAt: row.newsletterSentAt?.toISOString() ?? null,
       updatedAt: row.updatedAt.toISOString(),
     },
@@ -59,10 +60,21 @@ function cleanBlocks(blocks: Block[]): Block[] {
 
 export class PostValidationError extends Error {}
 
+/** "2026-10-16" -> that day at midnight UTC. Display uses UTC too, so every visitor sees the same day. */
+export function dayToDate(day: string) {
+  const date = new Date(`${day}T00:00:00Z`);
+  const year = date.getUTCFullYear();
+  if (Number.isNaN(date.getTime()) || year < 1900 || year > 2100) throw new PostValidationError("That date isn't valid.");
+  return date;
+}
+
 /** Validates and writes the editor's input. Returns the saved row. */
 export async function writePost(id: string, input: PostInput) {
-  const existing = await db.post.findUnique({ where: { id }, select: { type: true } });
+  const existing = await db.post.findUnique({ where: { id }, select: { type: true, status: true, publishedAt: true } });
   if (!existing) throw new PostValidationError("Post not found.");
+
+  // A published post always keeps a date: clearing the field leaves the current one in place.
+  const publishedAt = input.date ? dayToDate(input.date) : existing.status === "PUBLISHED" ? existing.publishedAt : null;
 
   if (!SLUG_RE.test(input.slug)) {
     throw new PostValidationError("The URL slug may only contain lowercase letters, numbers and single dashes (e.g. kyoto-in-autumn).");
@@ -85,6 +97,7 @@ export async function writePost(id: string, input: PostInput) {
       excerptEn: input.excerptEn.trim(),
       excerptJa: input.excerptJa.trim(),
       coverImageId: input.coverImageId,
+      publishedAt,
       blocks: cleanBlocks(input.blocks),
     },
   });

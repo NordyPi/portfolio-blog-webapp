@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BlockRenderer } from "@/components/block-renderer";
 import { loadEditorState } from "@/lib/admin-posts";
 import { pickText } from "@/lib/blocks";
+import { formatDate } from "@/lib/i18n";
 import { requireAdmin } from "@/lib/session";
 
 // Private admin page: navigations may block on the server (no instant-navigation static shell needed).
@@ -33,6 +34,9 @@ export default async function PreviewPage({ params, searchParams }: PageProps<"/
       <article className="pb-16 pt-12">
         <header className="mx-auto mb-12 max-w-3xl px-4 text-center">
           <h1 className="font-display text-4xl font-semibold leading-tight sm:text-6xl">{pickText(post.titleEn, post.titleJa, lang)}</h1>
+          <p className="mt-5 text-sm uppercase tracking-wider text-muted">
+            {post.date ? formatDate(post.date, lang) : "No date yet — set on publish"}
+          </p>
         </header>
         <BlockRenderer blocks={post.blocks} media={media} lang={lang} />
       </article>
