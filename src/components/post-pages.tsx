@@ -79,9 +79,10 @@ async function PostDetail({ params, type }: { params: DetailParams; type: PostKi
           ← {type === "BLOG" ? t.backToBlog : t.backToPortfolio}
         </Link>
         <h1 className="mt-6 font-display text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">{post.title}</h1>
-        <time dateTime={post.publishedAt} className="mt-5 block text-sm uppercase tracking-wider text-muted">
-          {formatDate(post.publishedAt, lang)}
-        </time>
+        <p className="mt-5 text-sm uppercase tracking-wider text-muted">
+          <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, lang)}</time>
+          {post.location && <> – {post.location}</>}
+        </p>
         {translatedNotice && <p className="mt-2 text-xs text-muted">{translatedNotice}</p>}
       </header>
 

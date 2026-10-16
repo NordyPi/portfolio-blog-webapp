@@ -66,3 +66,13 @@ jobs:
           push: true
           tags: ${{ steps.name.outputs.image }}:migrator
           cache-from: type=gha
+
+      - name: Build & push tools image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: tools
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.name.outputs.image }}:tools
+          cache-from: type=gha

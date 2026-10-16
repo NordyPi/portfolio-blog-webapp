@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ImageSlot, VideoSlot } from "@/components/admin/media-slots";
+import { MediaSlot, VideoSlot } from "@/components/admin/media-slots";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { BLOCK_OPTIONS, IMAGE_RATIOS, parseYouTubeId, type Block, type Localized } from "@/lib/blocks";
 import type { EditorMedia } from "@/lib/editor-types";
@@ -26,7 +26,8 @@ export type BlockEditorProps = {
 const inputClass = "w-full rounded-xl border border-border bg-surface px-3 py-2 outline-none focus:border-accent";
 
 function blockLabel(block: Block) {
-  const value = block.type === "split" ? `split-${block.imageSide}` : block.type;
+  const value =
+    block.type === "split" ? `split-${block.imageSide}` : block.type === "row" ? `row-${block.mediaIds.length}` : block.type;
   return BLOCK_OPTIONS.find((o) => o.value === value)?.label ?? block.type;
 }
 
@@ -81,13 +82,14 @@ export function BlockEditor({ block, lang, isTranslation, staleKeys, media, onCh
     switch (block.type) {
       case "cover":
       case "wide":
+      case "photo":
         return (
           <>
-            <ImageSlot
+            <MediaSlot
               {...slot}
               mediaId={block.mediaId}
               onChange={(mediaId) => onChange({ ...block, mediaId })}
-              ratio={IMAGE_RATIOS[block.type]}
+              ratio={block.type === "photo" ? undefined : IMAGE_RATIOS[block.type]}
             />
             <Caption value={block.caption} lang={lang} onChange={(caption) => onChange({ ...block, caption })} stale={stale("caption")} />
           </>
@@ -95,7 +97,7 @@ export function BlockEditor({ block, lang, isTranslation, staleKeys, media, onCh
       case "split": {
         const image = (
           <div key="image">
-            <ImageSlot {...slot} mediaId={block.mediaId} onChange={(mediaId) => onChange({ ...block, mediaId })} ratio={IMAGE_RATIOS.split} />
+            <MediaSlot {...slot} mediaId={block.mediaId} onChange={(mediaId) => onChange({ ...block, mediaId })} ratio={IMAGE_RATIOS.split} />
           </div>
         );
         const text = (
@@ -125,19 +127,19 @@ export function BlockEditor({ block, lang, isTranslation, staleKeys, media, onCh
           </div>
         );
       }
-      case "triple":
+      case "row":
         return (
           <>
-            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <div className={`grid gap-2 sm:gap-4 ${block.mediaIds.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
               {block.mediaIds.map((id, i) => (
-                <ImageSlot
+                <MediaSlot
                   key={i}
                   {...slot}
                   mediaId={id}
-                  label="Upload"
-                  ratio={IMAGE_RATIOS.triple}
+                  ratio={IMAGE_RATIOS.row}
+                  allowVideo
                   onChange={(mediaId) => {
-                    const mediaIds = [...block.mediaIds] as typeof block.mediaIds;
+                    const mediaIds = [...block.mediaIds];
                     mediaIds[i] = mediaId;
                     onChange({ ...block, mediaIds });
                   }}

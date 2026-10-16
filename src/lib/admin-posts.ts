@@ -34,6 +34,8 @@ export async function loadEditorState(id: string): Promise<EditorState | null> {
       titleJa: row.titleJa,
       excerptEn: row.excerptEn,
       excerptJa: row.excerptJa,
+      locationEn: row.locationEn,
+      locationJa: row.locationJa,
       coverImageId: row.coverImageId,
       blocks,
       // Dates are stored as midnight UTC of the chosen day, so the UTC date is the calendar day.
@@ -96,6 +98,8 @@ export async function writePost(id: string, input: PostInput) {
       titleJa: input.titleJa.trim(),
       excerptEn: input.excerptEn.trim(),
       excerptJa: input.excerptJa.trim(),
+      locationEn: input.locationEn.trim(),
+      locationJa: input.locationJa.trim(),
       coverImageId: input.coverImageId,
       publishedAt,
       blocks: cleanBlocks(input.blocks),

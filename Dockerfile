@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
-# Two images are built from this file:
-#   --target runner    the website            (ghcr.io/<you>/<repo>:latest)
-#   --target migrator  applies DB migrations  (ghcr.io/<you>/<repo>:migrator)
+# Three images are built from this file:
+#   --target runner    the website                     (ghcr.io/<you>/<repo>:latest)
+#   --target migrator  applies DB migrations           (ghcr.io/<you>/<repo>:migrator)
+#   --target tools     one-off scripts, run on demand  (ghcr.io/<you>/<repo>:tools)
 
 FROM node:24-alpine AS base
 WORKDIR /app
@@ -38,6 +39,17 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json prisma.config.ts ./
 COPY prisma ./prisma
 CMD ["npx", "prisma", "migrate", "deploy"]
+
+# ---- tools: one-off maintenance scripts (e.g. the old-post import), run on demand ----
+FROM base AS tools
+RUN apk add --no-cache ffmpeg openssl \
+ && addgroup -S -g 1001 app && adduser -S -u 1001 -G app app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npx prisma generate
+# Same user as the website, so files written to the uploads volume belong to it.
+USER app
+CMD ["sh"]
 
 # ---- runner: the website ----
 FROM base AS runner

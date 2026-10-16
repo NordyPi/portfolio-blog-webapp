@@ -30,6 +30,25 @@ function Img({ id, media, sizes, className, priority }: { id: string | null; med
   return m ? <MediaImage media={m} sizes={sizes} className={className} priority={priority} /> : <MediaPlaceholder className={className} />;
 }
 
+/** One slot of a row: a photo (cropped to fill) or a video (shown whole, with player controls). */
+function RowSlot({ id, media, sizes }: { id: string | null; media: Media; sizes: string }) {
+  const m = id ? media[id] : undefined;
+  const shape = "aspect-[2/3] w-full rounded-xl";
+  if (m?.kind === "VIDEO") {
+    return (
+      <video
+        src={m.src}
+        poster={m.poster ?? undefined}
+        controls
+        playsInline
+        preload="metadata"
+        className={`${shape} bg-black object-contain`}
+      />
+    );
+  }
+  return <Img id={id} media={media} sizes={sizes} className={`${shape} object-cover`} />;
+}
+
 function BlockView({ block, media, lang, priority }: { block: Block; media: Media; lang: Locale; priority: boolean }) {
   switch (block.type) {
     case "cover":
@@ -66,17 +85,28 @@ function BlockView({ block, media, lang, priority }: { block: Block; media: Medi
       );
     }
 
-    case "triple":
+    case "photo":
+      // Whole photo at its own shape: width/height attributes reserve the space, h-auto keeps the ratio.
       return (
-        <figure className="mx-auto w-full max-w-4xl px-4 sm:px-6">
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <figure className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+          <Img id={block.mediaId} media={media} sizes="(min-width: 1024px) 976px, 100vw" priority={priority} className="h-auto w-full rounded-2xl" />
+          <Caption text={localize(block.caption, lang)} />
+        </figure>
+      );
+
+    case "row": {
+      const three = block.mediaIds.length === 3;
+      return (
+        <figure className={`mx-auto w-full px-4 sm:px-6 ${three ? "max-w-4xl" : "max-w-3xl"}`}>
+          <div className={`grid gap-2 sm:gap-4 ${three ? "grid-cols-3" : "grid-cols-2"}`}>
             {block.mediaIds.map((id, i) => (
-              <Img key={i} id={id} media={media} sizes="(min-width: 896px) 300px, 33vw" className="aspect-[9/16] w-full rounded-xl object-cover" />
+              <RowSlot key={i} id={id} media={media} sizes={three ? "(min-width: 896px) 300px, 33vw" : "(min-width: 768px) 380px, 50vw"} />
             ))}
           </div>
           <Caption text={localize(block.caption, lang)} />
         </figure>
       );
+    }
 
     case "text":
       return <RichText html={localize(block.text, lang)} className="mx-auto w-full max-w-2xl px-4 sm:px-6" />;

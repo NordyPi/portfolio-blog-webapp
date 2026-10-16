@@ -83,6 +83,23 @@ services:
       db:
         condition: service_healthy
 
+  # One-off maintenance scripts, never started by deploy.sh. Example (the old-post import):
+  #   docker compose --profile tools run --rm tools npm run import-old-posts -- --posts /old-posts
+  tools:
+    image: ${APP_IMAGE}:tools
+    profiles: ["tools"]
+    user: "1001:1001" # same user as the app, so files it writes to the uploads volume have the right owner
+    env_file: .env
+    environment:
+      DATABASE_URL: *db-url
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+      - ${OLD_POSTS_DIR:-/home/LoklinBlogAboutApp/client/src/posts}:/old-posts:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped

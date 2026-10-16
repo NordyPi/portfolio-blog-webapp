@@ -25,6 +25,8 @@ export const postInputSchema = z.object({
   titleJa: z.string().max(200),
   excerptEn: z.string().max(500),
   excerptJa: z.string().max(500),
+  locationEn: z.string().max(120),
+  locationJa: z.string().max(120),
   coverImageId: z.string().nullable(),
   /** The post's date as a calendar day ("2026-10-16"), shown on cards and the post; null until set or published. */
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),

@@ -11,6 +11,8 @@ export type TranslatableDoc = {
   titleJa: string;
   excerptEn: string;
   excerptJa: string;
+  locationEn: string;
+  locationJa: string;
   blocks: Block[];
   /** fieldKey -> hash of the source text when it was last translated */
   translationState: Record<string, string>;
@@ -20,13 +22,15 @@ const hash = (s: string) => createHash("sha256").update(s).digest("hex").slice(0
 
 type Entry = { key: string; field: Localized; html: boolean };
 
-/** All translatable fields. title/excerpt are wrapped in temporary Localized objects (see writeBack). */
+/** All translatable fields. Post-level fields are wrapped in temporary Localized objects (see writeBack). */
 function entries(doc: TranslatableDoc) {
   const title: Localized = { en: doc.titleEn, ja: doc.titleJa };
   const excerpt: Localized = { en: doc.excerptEn, ja: doc.excerptJa };
+  const location: Localized = { en: doc.locationEn, ja: doc.locationJa };
   const list: Entry[] = [
     { key: "title", field: title, html: false },
     { key: "excerpt", field: excerpt, html: false },
+    { key: "location", field: location, html: false },
     ...doc.blocks.flatMap(localizedFields),
   ];
   const writeBack = () => {
@@ -34,6 +38,8 @@ function entries(doc: TranslatableDoc) {
     doc.titleJa = title.ja;
     doc.excerptEn = excerpt.en;
     doc.excerptJa = excerpt.ja;
+    doc.locationEn = location.en;
+    doc.locationJa = location.ja;
   };
   return { list, writeBack };
 }

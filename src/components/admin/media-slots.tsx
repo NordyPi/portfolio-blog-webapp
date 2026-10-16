@@ -57,27 +57,52 @@ function UploadButton({
   );
 }
 
-/** Image placeholder / preview. Choosing a photo opens the cropper framed to this slot's shape, then uploads. */
-export function ImageSlot({
+
+/** While a video is still being transcoded on the server, poll until it's READY (or FAILED). */
+function useProcessingPoll(m: EditorMedia | undefined, onUploaded: (m: EditorMedia) => void) {
+  useEffect(() => {
+    if (m?.status !== "PROCESSING") return;
+    const timer = setInterval(async () => {
+      const res = await fetch(`/api/admin/media/${m.id}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.status !== "PROCESSING") onUploaded({ ...json.media, status: json.status });
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [m?.id, m?.status, onUploaded]);
+}
+
+const IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/avif";
+const VIDEO_TYPES = "video/mp4,video/quicktime,video/webm";
+
+/**
+ * A photo slot (optionally photo-or-video). Choosing a photo opens the cropper framed to the slot's
+ * shape, then uploads. Without a `ratio` the photo is uploaded whole (no cropper) and previewed at its
+ * own shape. With `allowVideo`, videos are uploaded as-is and transcoded on the server.
+ */
+export function MediaSlot({
   mediaId,
   media,
   onChange,
   onUploaded,
   ratio,
+  allowVideo = false,
   label = "Upload image",
 }: {
   mediaId: string | null;
   media: Record<string, EditorMedia>;
   onChange: (id: string | null) => void;
   onUploaded: (m: EditorMedia) => void;
-  /** Width / height of the slot, e.g. 16 / 9. Used for both the preview box and the crop frame. */
-  ratio: number;
+  /** Width / height of the slot, e.g. 16 / 9: the preview box and crop frame. Omit for uncropped photos. */
+  ratio?: number;
+  allowVideo?: boolean;
   label?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cropping, setCropping] = useState<File | null>(null);
   const m = mediaId ? media[mediaId] : undefined;
+  useProcessingPoll(m, onUploaded);
 
   async function handle(file: File, crop: CropArea | null) {
     setCropping(null);
@@ -90,9 +115,18 @@ export function ImageSlot({
     onChange(res.media.id);
   }
 
+  function choose(file: File) {
+    if (file.type.startsWith("video/")) return handle(file, null);
+    if (ratio === undefined) return handle(file, null);
+    setCropping(file);
+  }
+
+  // Uncropped photos preview at their own shape (3:2 while empty).
+  const boxRatio = ratio ?? (m?.width && m?.height ? m.width / m.height : 3 / 2);
+
   return (
     <div>
-      {cropping && (
+      {cropping && ratio !== undefined && (
         <ImageCropDialog
           file={cropping}
           aspect={ratio}
@@ -108,17 +142,42 @@ export function ImageSlot({
           onConfirm={(area) => handle(cropping, area)}
         />
       )}
-      <div className="relative overflow-hidden rounded-xl bg-surface-2" style={{ aspectRatio: ratio }}>
-        {m && (
-          // eslint-disable-next-line @next/next/no-img-element -- admin preview
-          <img src={m.src} srcSet={m.srcSet ?? undefined} sizes="600px" alt="" className="absolute inset-0 size-full object-cover" />
+      <div className="relative overflow-hidden rounded-xl bg-surface-2" style={{ aspectRatio: boxRatio }}>
+        {m?.kind === "VIDEO" ? (
+          m.status === "READY" ? (
+            <video src={m.src} poster={m.poster ?? undefined} controls className="absolute inset-0 size-full bg-black object-contain" />
+          ) : (
+            <p className={`absolute inset-0 flex items-center justify-center p-3 text-center text-xs ${m.status === "FAILED" ? "text-danger" : "text-muted"}`}>
+              {m.status === "FAILED" ? "Video couldn't be processed" : "Processing video…"}
+            </p>
+          )
+        ) : (
+          m && (
+            // eslint-disable-next-line @next/next/no-img-element -- admin preview
+            <img
+              src={m.src}
+              srcSet={m.srcSet ?? undefined}
+              sizes="600px"
+              alt=""
+              className={`absolute inset-0 size-full ${ratio === undefined ? "object-contain" : "object-cover"}`}
+            />
+          )
         )}
-        <div className={`absolute inset-0 flex flex-wrap items-center justify-center gap-2 p-2 ${m ? "bg-black/0 opacity-0 transition hover:bg-black/40 hover:opacity-100 focus-within:opacity-100" : ""}`}>
+        {/* Controls: always visible when empty; on hover/focus over existing media (kept clear of video controls). */}
+        <div
+          className={`absolute inset-x-0 top-0 flex flex-wrap items-center justify-center gap-2 p-2 ${
+            m ? "opacity-0 transition hover:opacity-100 focus-within:opacity-100" : "bottom-0"
+          }`}
+        >
           {busy ? (
             <span className="rounded-full bg-surface px-3 py-1.5 text-sm shadow-sm">Uploading…</span>
           ) : (
             <>
-              <UploadButton accept="image/jpeg,image/png,image/webp,image/avif" label={m ? "Replace" : label} onFile={setCropping} />
+              <UploadButton
+                accept={allowVideo ? `${IMAGE_TYPES},${VIDEO_TYPES}` : IMAGE_TYPES}
+                label={m ? "Replace" : allowVideo ? "Photo or video" : label}
+                onFile={choose}
+              />
               {m && (
                 <button
                   type="button"
@@ -152,17 +211,7 @@ export function VideoSlot({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const m = mediaId ? media[mediaId] : undefined;
-
-  useEffect(() => {
-    if (m?.status !== "PROCESSING") return;
-    const timer = setInterval(async () => {
-      const res = await fetch(`/api/admin/media/${m.id}`);
-      if (!res.ok) return;
-      const json = await res.json();
-      if (json.status !== "PROCESSING") onUploaded({ ...json.media, status: json.status });
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [m?.id, m?.status, onUploaded]);
+  useProcessingPoll(m, onUploaded);
 
   async function handle(file: File) {
     setBusy(true);
@@ -183,7 +232,7 @@ export function VideoSlot({
         {busy ? (
           <span className="text-sm text-muted">Uploading…</span>
         ) : (
-          <UploadButton accept="video/mp4,video/quicktime,video/webm" label={m ? "Replace video" : "Upload video (max 95 MB)"} onFile={handle} />
+          <UploadButton accept={VIDEO_TYPES} label={m ? "Replace video" : "Upload video (max 95 MB)"} onFile={handle} />
         )}
         {m && !busy && (
           <button type="button" onClick={() => onChange(null)} className="text-sm text-danger">

@@ -18,6 +18,8 @@ function makeDoc(): TranslatableDoc {
     titleJa: "",
     excerptEn: "Leaves",
     excerptJa: "",
+    locationEn: "Kyoto, Japan",
+    locationJa: "",
     blocks: [
       { id: "a", type: "text", text: { en: "<p>First <strong>para</strong></p>", ja: "" } },
       { id: "b", type: "wide", mediaId: null, caption: { en: "Bridge", ja: "" } },
@@ -33,8 +35,9 @@ beforeEach(() => {
 test("first run translates every field and keeps rich-text markup", async () => {
   const doc = makeDoc();
   await translateDoc(doc);
-  assert.equal(sent.length, 4);
+  assert.equal(sent.length, 5); // title, excerpt, location, text block, caption
   assert.equal(doc.titleJa, "[JA] Autumn in Kyoto");
+  assert.equal(doc.locationJa, "[JA] Kyoto, Japan");
   assert.ok(doc.blocks[0].type === "text" && doc.blocks[0].text.ja.includes("<strong>"));
   assert.deepEqual(staleTranslationKeys(doc), []);
 });

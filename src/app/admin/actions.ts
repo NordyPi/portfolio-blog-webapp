@@ -69,6 +69,8 @@ export async function translatePost(id: string, input: PostInput, force = false)
         titleJa: doc.titleJa,
         excerptEn: doc.excerptEn,
         excerptJa: doc.excerptJa,
+        locationEn: doc.locationEn,
+        locationJa: doc.locationJa,
         blocks: doc.blocks,
         translationState: doc.translationState,
       },

@@ -127,6 +127,9 @@ model Post {
   titleJa   String @default("")
   excerptEn String @default("")
   excerptJa String @default("")
+  /// Where a blog post took place, e.g. "Kyoto, Japan" (shown next to the date). Empty for projects.
+  locationEn String @default("")
+  locationJa String @default("")
 
   /// Ordered list of content blocks. Layout and media are shared between languages;
   /// text fields inside each block are stored as { en, ja }. See src/lib/blocks.ts.

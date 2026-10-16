@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { deletePost, publishPost, savePost, translatePost, unpublishPost } from "@/app/admin/actions";
 import { BlockEditor, TranslationBadge } from "@/components/admin/block-editor";
-import { ImageSlot } from "@/components/admin/media-slots";
+import { MediaSlot } from "@/components/admin/media-slots";
 import { BLOCK_OPTIONS, IMAGE_RATIOS, newBlock, type Block, type BlockOption } from "@/lib/blocks";
 import { localToday, slugify, type ActionResult, type EditorMedia, type EditorPost, type EditorState, type PostInput } from "@/lib/editor-types";
 import { formatDate } from "@/lib/i18n";
@@ -18,6 +18,8 @@ const inputOf = (p: EditorPost): PostInput => ({
   titleJa: p.titleJa,
   excerptEn: p.excerptEn,
   excerptJa: p.excerptJa,
+  locationEn: p.locationEn,
+  locationJa: p.locationJa,
   coverImageId: p.coverImageId,
   date: p.date,
   blocks: p.blocks,
@@ -77,12 +79,15 @@ export function PostEditor({ initial }: { initial: EditorState }) {
 
   const titleKey = lang === "en" ? "titleEn" : "titleJa";
   const excerptKey = lang === "en" ? "excerptEn" : "excerptJa";
+  const locationKey = lang === "en" ? "locationEn" : "locationJa";
   const staleField = (key: string) => isTranslation && staleKeys.includes(key);
 
   // The first image block's picture becomes the card cover if none was chosen yet.
   function onBlockChange(id: string, block: Block) {
     updateBlock(id, block);
-    if (!post.coverImageId && (block.type === "cover" || block.type === "wide") && block.mediaId) set("coverImageId", block.mediaId);
+    if (!post.coverImageId && (block.type === "cover" || block.type === "wide" || block.type === "photo") && block.mediaId) {
+      set("coverImageId", block.mediaId);
+    }
   }
 
   return (
@@ -168,22 +173,39 @@ export function PostEditor({ initial }: { initial: EditorState }) {
             />
           </label>
           <div>
-            <label className="block">
-              <span className={labelClass}>Date</span>
-              <div className="mt-1 flex flex-wrap items-center gap-3">
-                <input
-                  type="date"
-                  value={post.date ?? ""}
-                  min="1900-01-01"
-                  max="2100-12-31"
-                  onChange={(e) => set("date", e.target.value || null)}
-                  className={`${inputClass} w-auto`}
-                />
-                <button type="button" onClick={() => set("date", localToday())} className="text-xs text-muted hover:text-accent">
-                  Today
-                </button>
-              </div>
-            </label>
+            <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+              <label className="block">
+                <span className={labelClass}>Date</span>
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <input
+                    type="date"
+                    value={post.date ?? ""}
+                    min="1900-01-01"
+                    max="2100-12-31"
+                    onChange={(e) => set("date", e.target.value || null)}
+                    className={`${inputClass} w-auto`}
+                  />
+                  <button type="button" onClick={() => set("date", localToday())} className="text-xs text-muted hover:text-accent">
+                    Today
+                  </button>
+                </div>
+              </label>
+              {post.type === "BLOG" && (
+                <label className="block min-w-48 flex-1">
+                  <span className={labelClass}>
+                    Location ({lang === "en" ? "English" : "日本語"})
+                    <TranslationBadge show={staleField("location")} />
+                  </span>
+                  <input
+                    value={post[locationKey]}
+                    maxLength={120}
+                    placeholder={lang === "en" ? "Kyoto, Japan" : "京都、日本"}
+                    onChange={(e) => set(locationKey, e.target.value)}
+                    className={`mt-1 ${inputClass}`}
+                  />
+                </label>
+              )}
+            </div>
             <span className="mt-1 block text-xs text-muted">
               Shown on the {kind} card and at the top of the {kind}. {kind === "post" ? "Posts" : "Projects"} are listed newest first by this date.
               {!post.date && " Left empty, it's set to the day you publish."}
@@ -226,7 +248,7 @@ export function PostEditor({ initial }: { initial: EditorState }) {
         <div>
           <span className={labelClass}>Card image</span>
           <div className="mt-1">
-            <ImageSlot mediaId={post.coverImageId} media={media} onChange={(id) => set("coverImageId", id)} onUploaded={registerMedia} ratio={IMAGE_RATIOS.card} />
+            <MediaSlot mediaId={post.coverImageId} media={media} onChange={(id) => set("coverImageId", id)} onUploaded={registerMedia} ratio={IMAGE_RATIOS.card} />
           </div>
           <span className="mt-1 block text-xs text-muted">Shown on the {kind} grid and in subscriber emails.</span>
         </div>

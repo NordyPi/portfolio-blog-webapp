@@ -35,9 +35,17 @@ export function PostGrid({
                 <MediaPlaceholder className="size-full" />
               )}
             </div>
-            <time dateTime={post.publishedAt} className="mt-4 block text-xs uppercase tracking-wider text-muted">
-              {formatDate(post.publishedAt, lang)}
-            </time>
+            {/* Date on the left, location on the right, on one line. */}
+            <div className="mt-4 flex items-baseline justify-between gap-3 text-xs uppercase tracking-wider text-muted">
+              <time dateTime={post.publishedAt} className="shrink-0">
+                {formatDate(post.publishedAt, lang)}
+              </time>
+              {post.location && (
+                <span className="min-w-0 truncate text-right" title={post.location}>
+                  {post.location}
+                </span>
+              )}
+            </div>
             <h3 className="mt-1 font-display text-xl font-semibold leading-snug group-hover:text-accent">{post.title}</h3>
             {post.excerpt && <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">{post.excerpt}</p>}
           </Link>

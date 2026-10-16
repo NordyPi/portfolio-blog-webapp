@@ -65,7 +65,7 @@ async function main() {
         "朝市がハイライトでした。名前もわからないものを食べ、何でも指さして注文しました。",
       ),
     },
-    { id: "b4", type: "triple", mediaIds: [img[2].id, img[3].id, img[4].id], caption: L("Three streets, one afternoon", "三つの通り、ひとつの午後") },
+    { id: "b4", type: "row", mediaIds: [img[2].id, img[3].id, img[4].id], caption: L("Three streets, one afternoon", "三つの通り、ひとつの午後") },
     { id: "b5", type: "wide", mediaId: img[5].id, caption: L("", "") },
     {
       id: "b6",

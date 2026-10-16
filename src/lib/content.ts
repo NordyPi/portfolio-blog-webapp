@@ -20,6 +20,8 @@ export type PostCard = {
   slug: string;
   title: string;
   excerpt: string;
+  /** "Kyoto, Japan"; empty when not set (always empty for projects). */
+  location: string;
   publishedAt: string;
   cover: MediaView | null;
 };
@@ -49,6 +51,7 @@ async function listPublishedCached(type: PostKind, locale: Locale, limit: number
       slug: p.slug,
       title: pickText(p.titleEn, p.titleJa, locale),
       excerpt: pickText(p.excerptEn, p.excerptJa, locale),
+      location: pickText(p.locationEn, p.locationJa, locale),
       publishedAt: (p.publishedAt ?? p.createdAt).toISOString(),
       cover: p.coverImage ? toMediaView(p.coverImage) : null,
     }),
@@ -84,6 +87,7 @@ async function getPublishedPostCached(type: PostKind, slug: string, locale: Loca
     sourceLang: p.sourceLang === "JA" ? "ja" : "en",
     title: pickText(p.titleEn, p.titleJa, locale),
     excerpt: pickText(p.excerptEn, p.excerptJa, locale),
+    location: pickText(p.locationEn, p.locationJa, locale),
     publishedAt: (p.publishedAt ?? p.createdAt).toISOString(),
     cover: p.coverImage ? toMediaView(p.coverImage) : null,
     blocks,

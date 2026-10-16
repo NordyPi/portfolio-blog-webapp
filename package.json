@@ -13,7 +13,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "postinstall": "prisma generate",
     "test": "tsx --conditions=react-server --test tests/*.test.ts",
-    "headshot": "tsx scripts/prepare-headshot.ts"
+    "headshot": "tsx scripts/prepare-headshot.ts",
+    "import-old-posts": "tsx --conditions=react-server scripts/old-posts/import.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -33,6 +34,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.9",
+    "@babel/types": "^7.29.8",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",

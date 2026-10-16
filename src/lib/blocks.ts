@@ -22,6 +22,8 @@ export const blockSchema = z.discriminatedUnion("type", [
   z.object({ id, type: z.literal("cover"), mediaId: mediaRef, caption: localizedSchema }),
   /** Full-width banner image with a short height. */
   z.object({ id, type: z.literal("wide"), mediaId: mediaRef, caption: localizedSchema }),
+  /** Full-width photo shown whole, at its own shape (no cropping). */
+  z.object({ id, type: z.literal("photo"), mediaId: mediaRef, caption: localizedSchema }),
   /** 50/50 image + rich text, image on either side. */
   z.object({
     id,
@@ -30,11 +32,11 @@ export const blockSchema = z.discriminatedUnion("type", [
     mediaId: mediaRef,
     text: localizedSchema,
   }),
-  /** Three portrait (phone-shaped) images side by side. */
+  /** Two or three portrait (phone-shaped) slots side by side; each slot holds a photo or a video. */
   z.object({
     id,
-    type: z.literal("triple"),
-    mediaIds: z.tuple([mediaRef, mediaRef, mediaRef]),
+    type: z.literal("row"),
+    mediaIds: z.array(mediaRef).min(2).max(3),
     caption: localizedSchema,
   }),
   /** Standalone rich text. */
@@ -53,22 +55,30 @@ export const blockSchema = z.discriminatedUnion("type", [
 
 export type Block = z.infer<typeof blockSchema>;
 export type BlockType = Block["type"];
-export const blocksSchema = z.array(blockSchema);
+
+/** Older posts stored three-photo rows as `triple`; read them as a row of 3 (saved back in the new form). */
+const upgradeLegacy = (b: unknown) =>
+  b && typeof b === "object" && (b as { type?: unknown }).type === "triple" ? { ...b, type: "row" } : b;
+export const blocksSchema = z.array(z.preprocess(upgradeLegacy, blockSchema));
 
 /**
  * Width/height of each image slot as displayed by src/components/block-renderer.tsx (keep in sync).
  * The editor's cropper frames uploads to these shapes. "wide" is shown full-width at a fixed height,
- * so its real shape varies with screen size; 3:1 is a good middle ground.
+ * so its real shape varies with screen size; 3:1 is a good middle ground. "photo" isn't cropped.
+ * Row slots are 2:3: portrait phone photos (3:4) lose only a little at the sides, and phone videos
+ * (9:16) are shown whole with slim bars.
  */
-export const IMAGE_RATIOS = { cover: 16 / 9, wide: 3, split: 4 / 5, triple: 9 / 16, card: 4 / 3 } as const;
+export const IMAGE_RATIOS = { cover: 16 / 9, wide: 3, split: 4 / 5, row: 2 / 3, card: 4 / 3 } as const;
 
 /** Options shown in the editor's "Add block" dropdown. */
 export const BLOCK_OPTIONS = [
   { value: "cover", label: "Cover picture (large hero)" },
+  { value: "photo", label: "Full-width photo (uncropped)" },
   { value: "wide", label: "Wide picture (short banner)" },
   { value: "split-left", label: "Image left / text right" },
   { value: "split-right", label: "Text left / image right" },
-  { value: "triple", label: "3 vertical images" },
+  { value: "row-2", label: "Row of 2 (photos or videos)" },
+  { value: "row-3", label: "Row of 3 (photos or videos)" },
   { value: "text", label: "Text only" },
   { value: "video", label: "Video (upload or YouTube)" },
 ] as const;
@@ -81,12 +91,15 @@ export function newBlock(option: BlockOption): Block {
   switch (option) {
     case "cover":
     case "wide":
+    case "photo":
       return { id, type: option, mediaId: null, caption: empty() };
     case "split-left":
     case "split-right":
       return { id, type: "split", imageSide: option === "split-left" ? "left" : "right", mediaId: null, text: empty() };
-    case "triple":
-      return { id, type: "triple", mediaIds: [null, null, null], caption: empty() };
+    case "row-2":
+      return { id, type: "row", mediaIds: [null, null], caption: empty() };
+    case "row-3":
+      return { id, type: "row", mediaIds: [null, null, null], caption: empty() };
     case "text":
       return { id, type: "text", text: empty() };
     case "video":
@@ -100,9 +113,10 @@ export function blockMediaIds(blocks: Block[]): string[] {
     switch (b.type) {
       case "cover":
       case "wide":
+      case "photo":
       case "split":
         return [b.mediaId];
-      case "triple":
+      case "row":
         return b.mediaIds;
       case "video":
         return b.source.kind === "upload" ? [b.source.mediaId] : [];
@@ -125,7 +139,8 @@ export function localizedFields(block: Block): { key: string; field: Localized; 
       return [{ key: `${block.id}.text`, field: block.text, html: true }];
     case "cover":
     case "wide":
-    case "triple":
+    case "photo":
+    case "row":
     case "video":
       return [{ key: `${block.id}.caption`, field: block.caption, html: false }];
   }

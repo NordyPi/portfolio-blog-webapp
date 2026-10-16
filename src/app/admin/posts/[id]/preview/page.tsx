@@ -36,6 +36,7 @@ export default async function PreviewPage({ params, searchParams }: PageProps<"/
           <h1 className="font-display text-4xl font-semibold leading-tight sm:text-6xl">{pickText(post.titleEn, post.titleJa, lang)}</h1>
           <p className="mt-5 text-sm uppercase tracking-wider text-muted">
             {post.date ? formatDate(post.date, lang) : "No date yet — set on publish"}
+            {pickText(post.locationEn, post.locationJa, lang) && <> – {pickText(post.locationEn, post.locationJa, lang)}</>}
           </p>
         </header>
         <BlockRenderer blocks={post.blocks} media={media} lang={lang} />
