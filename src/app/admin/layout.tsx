@@ -11,7 +11,8 @@ export const metadata: Metadata = { title: "Admin", robots: { index: false, foll
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
     <html lang="en" className={fontVariables}>
-      <body className="min-h-dvh bg-bg font-sans text-fg antialiased">
+      {/* See src/app/[lang]/layout.tsx: tolerate browser extensions editing <body> attributes. */}
+      <body suppressHydrationWarning className="min-h-dvh bg-bg font-sans text-fg antialiased">
         <Suspense fallback={<p className="p-8 text-muted">Loading…</p>}>
           <AdminShell>{children}</AdminShell>
         </Suspense>

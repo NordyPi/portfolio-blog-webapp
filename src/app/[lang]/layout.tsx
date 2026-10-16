@@ -34,7 +34,9 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
 
   return (
     <html lang={lang} className={fontVariables}>
-      <body className="flex min-h-dvh flex-col bg-bg font-sans text-fg antialiased">
+      {/* Browser extensions (e.g. asbplayer) add attributes to <body> before React loads; this ignores
+          attribute differences on <body> only — mismatches inside the page are still reported. */}
+      <body suppressHydrationWarning className="flex min-h-dvh flex-col bg-bg font-sans text-fg antialiased">
         <SiteHeader
           lang={lang}
           siteName={siteConfig.name}

@@ -20,11 +20,18 @@
   "home": {
     "eyebrow": "Hello, I'm",
     "name": "Loklin Nord",
-    "intro": "I'm a developer who loves to travel. This site is where I share stories and photos from the road — and the projects I've built along the way.",
+    "intro": "Currently studying Japanese abroad at ISI Language School in Kyoto. Feel free to explore my recent trips and experiences through my blog, or browse my portfolio for projects I've been working on or published.",
     "aboutHeading": "About me",
     "about": [
-      "Replace this with a few paragraphs about yourself: where you're from, what you do, and what you're looking for.",
-      "This page doubles as the About section of the site, so it's a good place to mention the kind of roles you're interested in."
+      "Born in Missoula, Montana, I grew up the oldest of four siblings and developed an interest in personal computers at a young age. After graduating from Sentinel High School and taking a gap year to save up on funds (but also avoid fully online classes due to Covid-19), I attended the University of Denver in Colorado, initially studying computer science. I began taking Japanese langauge courses my first year of college, interested in the culture through media I had consumed, and with a goal to eventually at least visit Japan one day.",
+      "Continuing my language studies at DU, I set my sights on studying abroad in Japan durin my third year, and enrolled at Doshisha University for a half a year of Japanese langauge and cultural studies. Once returning to America to finish my degree, I was able to double major in Japanese Language, Literature & Culture alonside Computer Science, and graduated in 2025. I then returned to Japan to continue my Japanese studies at ISI Language School in Kyoto, where I am currently enrolled.",
+      "Inspired to find a future career in the intersection of technology and language, I returned to Japan after graduating college to continue my language studies and cultural immersion, and to explore the country and its people. I am currently seeking opportunities to work in Japan or America, ideally in a role that allows me to combine my technical skills with my language abilities."
+    ],
+    "aboutSite": "About my website",
+    "aboutSiteBody": [
+      "When I started building this more than two years ago, I originally had planned for it just to be a simple blog site where I could share my travel stories and photos from my time studying abroad at Doshisha University with my family and friends. However, it grew slowly grew into a larger project that I wanted to function as way to get to know me and what I do, share my stories, and also showcase projects and things I've done through portfolio page.",
+      "I finally got around to revamping the site in late 2026, and entirely scrapped my original code and shifted tech stacks in order to support the new features I wanted to implement. I kept the base layout and design the same however, adding improved funcionality and better visuals, as well as enhanced security and performance.",
+      "Check out the full project details under my Portfolio section."
     ],
     "latestPosts": "Latest stories",
     "featuredProjects": "Recent projects",
