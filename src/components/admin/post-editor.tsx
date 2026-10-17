@@ -358,7 +358,11 @@ function PublishDialog({
           <input type="checkbox" className="mt-1" checked={notify} disabled={alreadySent} onChange={(e) => setNotify(e.target.checked)} />
           <span>
             Email subscribers about this {post.type === "BLOG" ? "post" : "project"}
-            {alreadySent && <span className="block text-xs text-muted">Already sent on {new Date(post.newsletterSentAt!).toLocaleDateString("en-GB")}.</span>}
+            {alreadySent && (
+              <span className="block text-xs text-muted">
+                Already announced ({formatDate(post.newsletterSentAt!, "en")}), so subscribers won&apos;t be emailed again.
+              </span>
+            )}
           </span>
         </label>
         <div className="mt-6 flex justify-end gap-2">

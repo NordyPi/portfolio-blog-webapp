@@ -4,10 +4,10 @@
 //
 // Without --write it's a dry run: it reports what it would create and changes nothing.
 // With --write it processes media through the normal upload pipeline (WebP / H.264, metadata stripped)
-// and creates or updates draft posts. Safe to re-run:
+// and creates draft posts. Safe to re-run (e.g. after an interruption):
 //   - media already imported is reused (tracked in <UPLOAD_DIR>/.old-post-import.json), so videos aren't re-transcoded
-//   - a post imported before is updated in place — unless it has been published since, then it's left alone
-// Nothing is published and no subscriber emails are sent.
+//   - posts imported before are skipped; --update re-imports drafts (never published posts, never the card description)
+// Nothing is published, and imported posts are marked as already announced, so they never email subscribers.
 import "dotenv/config";
 import { existsSync, readdirSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
@@ -19,7 +19,7 @@ import { slugify } from "@/lib/editor-types";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { UPLOAD_DIR } from "@/lib/upload-dir";
 import { processVideo, saveImage, stageVideo } from "@/lib/uploads";
-import { htmlToText, makeExcerpt, parseStartDate } from "./helpers";
+import { parseStartDate } from "./helpers";
 import { parseOldPost, type MediaRef, type OldPost } from "./parse";
 
 const DEFAULT_YEAR = 2024;
@@ -36,8 +36,9 @@ const arg = (name: string) => {
 const postsRoot = arg("--posts");
 const only = arg("--only")?.split(",").map((s) => s.trim());
 const write = args.includes("--write");
+const update = args.includes("--update");
 if (!postsRoot) {
-  console.error("Usage: import.ts --posts <folder> [--only post01,post02] [--write]");
+  console.error("Usage: import.ts --posts <folder> [--only post01,post02] [--write] [--update]");
   process.exit(1);
 }
 
@@ -187,8 +188,6 @@ async function main() {
     const post = parseOldPost(path.join(postsRoot!, dir, `${dir}.js`));
     const title = post.title ?? dir;
     const day = post.date ? parseStartDate(post.date, DEFAULT_YEAR) : null;
-    const firstText = post.elements.find((e) => e.kind === "text");
-    const excerpt = firstText?.kind === "text" ? makeExcerpt(htmlToText(firstText.html)) : "";
 
     // Check every referenced file exists before touching anything.
     const refs = [post.cover, ...post.elements.flatMap((e) => (e.kind === "row" ? e.items : e.kind === "combo" ? [e.image] : []))].filter(
@@ -207,7 +206,13 @@ async function main() {
       continue;
     }
     if (existing?.status === "PUBLISHED") {
-      console.log(`      already published as /blog/${existing.slug}; left unchanged`);
+      console.log(`      already published as /blog/${existing.slug}; left unchanged\n`);
+      summary.skipped++;
+      continue;
+    }
+    if (existing && !update) {
+      // Already imported: leave the draft alone (it may have been edited). Use --update to re-import it.
+      console.log(`      already imported as draft /blog/${existing.slug}; skipped (use --update to re-import)\n`);
       summary.skipped++;
       continue;
     }
@@ -217,8 +222,7 @@ async function main() {
       const counts = blocks.reduce<Record<string, number>>((acc, b) => ({ ...acc, [b.type]: (acc[b.type] ?? 0) + 1 }), {});
       const videos = refs.filter((r) => r.type === "video").length;
       console.log(`      ${existing ? "would update" : "would create"} draft: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")}`);
-      console.log(`      media: ${refs.length - videos} photos, ${videos} videos${post.cover ? "" : " · no cover (card uses first photo)"}`);
-      console.log(`      excerpt: ${excerpt}\n`);
+      console.log(`      media: ${refs.length - videos} photos, ${videos} videos${post.cover ? "" : " · no cover (card uses first photo)"}\n`);
       continue;
     }
 
@@ -238,20 +242,27 @@ async function main() {
         usedSlugs.add(slug);
       }
 
+      const publishedAt = day ? dayToDate(day) : null;
       const data = {
         type: "BLOG" as const,
         status: "DRAFT" as const,
         slug,
         sourceLang: "EN" as const,
         titleEn: title,
-        excerptEn: excerpt,
         locationEn: post.location ?? "",
         blocks,
         coverImageId,
-        publishedAt: day ? dayToDate(day) : null,
+        publishedAt,
         authorId: admin?.id,
+        // These posts were shared at the time on the old site: mark them as announced so publishing them
+        // can never email subscribers.
+        newsletterSentAt: publishedAt ?? new Date(),
       };
-      const saved = existing ? await db.post.update({ where: { id: existing.id }, data }) : await db.post.create({ data });
+      // The card description is left empty on purpose (written by hand before publishing),
+      // and a re-import (--update) never overwrites one that has been filled in.
+      const saved = existing
+        ? await db.post.update({ where: { id: existing.id }, data })
+        : await db.post.create({ data: { ...data, excerptEn: "" } });
       state.posts[dir] = saved.id;
       await saveState(state);
       console.log(

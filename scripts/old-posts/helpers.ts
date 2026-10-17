@@ -1,4 +1,4 @@
-// Small pure helpers for the old-post import (unit-tested in tests/old-posts.test.ts).
+// Small pure helper for the old-post import (unit-tested in tests/old-posts.test.ts).
 
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
 
@@ -19,36 +19,4 @@ export function parseStartDate(text: string, defaultYear: number): string | null
   if (d < 1 || d > 31) return null;
   const year = Number(lower.match(/\b(19|20)\d{2}\b/)?.[0] ?? defaultYear);
   return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-}
-
-/** Plain text of an HTML snippet (entities decoded, whitespace collapsed). */
-export function htmlToText(html: string) {
-  return html
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<\/p>\s*<p>/gi, " ")
-    .replace(/<[^>]+>/g, "")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'")
-    .replaceAll("&amp;", "&")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
- * A short card description from the opening of a post: whole sentences until it's long enough,
- * capped at `max` characters (cut at a word boundary, with an ellipsis).
- */
-export function makeExcerpt(text: string, max = 200, enough = 90): string {
-  const sentences = text.match(/[^.!?。！？]+[.!?。！？]+["')\]]*\s*|[^.!?。！？]+$/g) ?? [text];
-  let out = "";
-  for (const s of sentences) {
-    if (out.length >= enough) break;
-    out += s;
-  }
-  out = out.trim();
-  if (out.length <= max) return out;
-  const cut = out.slice(0, max - 1);
-  return `${cut.slice(0, cut.lastIndexOf(" ") > 0 ? cut.lastIndexOf(" ") : cut.length).replace(/[,;:\s]+$/, "")}…`;
 }

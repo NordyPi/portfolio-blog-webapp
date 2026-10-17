@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { htmlToText, makeExcerpt, parseStartDate } from "../scripts/old-posts/helpers";
+import { parseStartDate } from "../scripts/old-posts/helpers";
 
 test("parseStartDate takes the first day of every date format the old posts use", () => {
   const cases: [string, string][] = [
@@ -24,17 +24,4 @@ test("parseStartDate takes the first day of every date format the old posts use"
 test("parseStartDate returns null when there is no usable date", () => {
   assert.equal(parseStartDate("sometime last spring", 2024), null);
   assert.equal(parseStartDate("March", 2024), null);
-});
-
-test("htmlToText decodes entities and joins paragraphs", () => {
-  assert.equal(htmlToText("<p>Fish &amp; chips</p><p>Second<br>line</p>"), "Fish & chips Second line");
-});
-
-test("makeExcerpt keeps whole opening sentences and caps the length", () => {
-  const text =
-    "Highlights from my first week in Japan! It's been a blast. Explored Kyoto, moved in to my dorm, made a ton of international buddies.";
-  assert.equal(makeExcerpt(text), "Highlights from my first week in Japan! It's been a blast. Explored Kyoto, moved in to my dorm, made a ton of international buddies.");
-  const long = "word ".repeat(80).trim();
-  const ex = makeExcerpt(long);
-  assert.ok(ex.length <= 200 && ex.endsWith("…"), ex);
 });
